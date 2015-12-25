@@ -17,7 +17,7 @@ function init(){
 	controls = new THREE.TrackballControls( camera );
 
 	//define certain speeds, reducing any to zero disables the functionality
-	controls.rotateSpeed = 5.0;
+	controls.rotateSpeed = 10.0;
 	controls.zoomSpeed = 1.2;
 	controls.panSpeed = 0.5;
 
@@ -34,20 +34,17 @@ function init(){
 	directionalLight.position.set( 0, 0, 1 );
 	scene.add( directionalLight );
 
-
-	var directionalLight = new THREE.DirectionalLight( 0xffeedd );
-	directionalLight.position.set( 0, 0, 1 );
-	scene.add( directionalLight );
 	//Renderer
 	renderer = new THREE.WebGLRenderer();
 	//set height
-	renderer.setSize(window.innerWidth/3, window.innerHeight/3);
+	renderer.setSize(window.innerWidth, window.innerHeight);
 	renderer.setClearColor( 0x000000, 1 );
 	//default background will be black, white border is b/c 
-	//objLoadTest();
-	//objLoadTest2();
-	grabObj();
-	document.body.appendChild(renderer.domElement);//adds a child to the html doc
+
+	var div = document.getElementById("myDiv");
+
+	//adds the renderer as a child to whatever div html element
+	div.appendChild(renderer.domElement);
 
 	//window resizing
 	window.addEventListener( 'resize', onWindowResize, false );
@@ -64,164 +61,241 @@ function render(){
 	renderer.render(scene, camera);//render this scene from the view of the camera
 }
 
-function doall(){
+function doAll(){
 	init();
 	animate();
 	render();
-	//grabObj();
+	grabObjs();
+	//demo();
 }
 
-function grabObj(){
+function grabObjs(){
+
 	$(document).ready(function ($) {
 		var obj;
 		//url should probably just be /data because that always points to an xml file
 		$.ajax({
-			url: '/kidney_hollow.xml',
+			url: 'liver.xml',
 			type: 'get',
 			dataType: 'xml',
 			success: function(data) {
 				//for each pair of node - oglmodel nodes do this
-				$(data).find('Node OglModel').each(function() {
+				$(data).find('OglModel').each(function() {
 					var normals = $(this).attr('normal');
 					var position = $(this).attr('position');
 					var texcoords = $(this).attr('texcoords');
 					var quads = $(this).attr('quads')
+					var textureName = $(this).attr('texturename');
 					var triangles = $(this).attr('triangles');
+
 					//now to assemble the obj file
-					var position2 = position.split(" ");
-					var texcoords2 = texcoords.split(" ");
-					var normals2 = normals.split(" ");
-					var quads2 = quads.split(" ");
-					var triangles2 = triangles.split(" ");
 					var obj = "";
-
-					//add geometric verticies to obj
 					var counter = 0;
-					for (var i = 0; i < position2.length; ++i){
-						//for some reason, split() creates empty strings, so this snippetignores
-						if(position2[i] === ""){
-							continue;
-						}
-						//if it if the beginning, add v at the beginning
-						if(counter === 0){
-							var v = "v ";
-							var result = v + position2[i];
-							obj = obj + result + " ";
-							++counter;
-							continue;
-						}
-						if (counter === 1){
-							obj = obj + position2[i] + " ";
-							++counter;
-							continue;
-						}
-						if(counter === 2){
-							obj = obj + position2[i] + "\n";
-							counter = 0;
-							continue;
-						}
-					}
+					//add geometric verticies to obj
+					if (position){
+						var position2 = position.split(" ");
 
-					//add texture verticies to obj
-					counter = 0;
-					for (var i = 0; i < texcoords2.length; ++i){
-						//for some reason, split() creates empty strings, so this snippetignores
-						if(texcoords2[i] === ""){
-							continue;
-						}
-						//if it if the beginning, add v at the beginning
-						if(counter === 0){
-							var v = "vt ";
-							var result = v + texcoords2[i];
-							obj = obj + result + " ";
-							++counter;
-							continue;
-						}
-						if (counter === 1){
-							obj = obj + texcoords2[i] + " ";
-							++counter;
-							continue;
-						}
-						if(counter === 2){
-							obj = obj + texcoords2[i] + "\n";
-							counter = 0;
-							continue;
+						for (var i = 0; i < position2.length; ++i){
+							//for some reason, split() creates empty strings, so this snippetignores
+							if(position2[i] === ""){
+								continue;
+							}
+							//if it if the beginning, add v at the beginning
+							if(counter === 0){
+								var v = "v ";
+								var result = v + position2[i];
+								obj = obj + result + " ";
+								++counter;
+								continue;
+							}
+							if (counter === 1){
+								obj = obj + position2[i] + " ";
+								++counter;
+								continue;
+							}
+							if(counter === 2){
+								obj = obj + position2[i] + "\n";
+								counter = 0;
+								continue;
+							}
 						}
 					}
 					
-					//add the normals to the obj
-					counter = 0;
-					for (var i = 0; i < normals2.length; ++i){
-						//for some reason, split() creates empty strings, so this snippetignores
-						if(normals2[i] === ""){
-							continue;
+					if (texcoords) {
+						var texcoords2 = texcoords.split(" ");
+						//add texture verticies to obj
+						for (var i = 0; i < texcoords2.length; ++i){
+							//for some reason, split() creates empty strings, so this snippetignores
+							if(texcoords2[i] === ""){
+								continue;
+							}
+							//if it if the beginning, add v at the beginning
+							if(counter === 0){
+								var v = "vt ";
+								var result = v + texcoords2[i];
+								obj = obj + result + " ";
+								++counter;
+								continue;
+							}
+							if (counter === 1){
+								obj = obj + texcoords2[i] + " " + 0.00000 + "\n";
+								counter = 0;
+								continue;
+							}
 						}
-						//if it if the beginning, add v at the beginning
-						if(counter === 0){
-							var v = "vn ";
-							var result = v + normals2[i];
-							obj = obj + result + " ";
-							++counter;
-							continue;
+					}
+					var counter = 0;
+					if (normals){
+						var normals2 = normals.split(" ");
+						//add the normals to the obj
+						for (var i = 0; i < normals2.length; ++i){
+							//for some reason, split() creates empty strings, so this snippetignores
+							if(normals2[i] === ""){
+								continue;
+							}
+							//if it if the beginning, add v at the beginning
+							if(counter === 0){
+								var v = "vn ";
+								var result = v + normals2[i];
+								obj = obj + result + " ";
+								++counter;
+								continue;
+							}
+							if (counter === 1){
+								obj = obj + normals2[i] + " ";
+								++counter;
+								continue;
+							}
+							if(counter === 2){
+								obj = obj + normals2[i] + "\n";
+								counter = 0;
+								continue;
+							}
 						}
-						if (counter === 1){
-							obj = obj + normals2[i] + " ";
-							++counter;
-							continue;
+					}
+					var counter = 0;
+					if (quads){
+						var quads2 = quads.split(" ");
+						//add quads to obj
+						for (var i = 0; i < quads2.length; ++i){
+							//for some reason, split() creates empty strings, so this snippetignores
+							if(quads2[i] === ""){
+								continue;
+							}
+							//if it if the beginning, add v at the beginning
+							if(counter === 0){
+								var f = "f ";
+								var inter = parseInt(quads2[i])+1;
+								var result = f + inter + "/" + inter + "/" + inter;
+								obj = obj + result + " ";
+								++counter;
+								continue;
+							}
+							if (counter === 1){
+								var inter = parseInt(quads2[i])+1;
+								obj = obj + inter + "/"+inter+"/" + inter + " ";
+								++counter;
+								continue;
+							}
+							if(counter === 2){
+								var inter = parseInt(quads2[i])+1;
+								obj = obj + inter + "/"+inter+"/" + inter + " ";
+								++counter;
+								continue;
+							}
+							if(counter === 3){
+								var inter = parseInt(quads2[i])+1;
+								obj = obj + inter + "/"+inter+"/" + inter + "\n";
+								counter = 0;
+								continue;
+							}
 						}
-						if(counter === 2){
-							obj = obj + normals2[i] + "\n";
-							counter = 0;
-							continue;
+					}
+					var counter = 0;
+					if(triangles) {
+						var triangles2 = triangles.split(" ");
+						for (var i = 0; i < triangles2.length; ++i){
+							//for some reason, split() creates empty strings, so this snippetignores
+							if(triangles2[i] === ""){
+								continue;
+							}
+							//if it if the beginning, add v at the beginning
+							if(counter === 0){
+								var f = "f ";
+								var inter = parseInt(triangles2[i])+1;
+								var result = f + inter + "/"+inter+"/" + inter;
+								obj = obj + result + " ";
+								++counter;
+								continue;
+							}
+							if (counter === 1){
+								var inter = parseInt(triangles2[i])+1;
+								obj = obj + inter + "/"+inter+"/" + inter + " ";
+								++counter;
+								continue;
+							}
+							if(counter === 2){
+								var inter = parseInt(triangles2[i])+1;
+								obj = obj + inter + "/"+inter+"/" + inter + "\n";
+								counter = 0;
+								continue;
+							}
 						}
 					}
 					
-					//add quads to obj
-					counter = 0;
-					for (var i = 0; i < quads2.length; ++i){
-						//for some reason, split() creates empty strings, so this snippetignores
-						if(quads2[i] === ""){
-							continue;
-						}
-						//if it if the beginning, add v at the beginning
-						if(counter === 0){
-							var f = "f ";
-							var inter = parseInt(quads2[i])+1;
-							var result = f + inter + "//" + inter;
-							obj = obj + result + " ";
-							++counter;
-							continue;
-						}
-						if (counter === 1){
-							var inter = parseInt(quads2[i])+1;
-							obj = obj + inter + "//" + inter + " ";
-							++counter;
-							continue;
-						}
-						if(counter === 2){
-							var inter = parseInt(quads2[i])+1;
-							obj = obj + inter + "//" + inter + " ";
-							++counter;
-							continue;
-						}
-						if(counter === 3){
-							var inter = parseInt(quads2[i])+1;
-							obj = obj + inter + "//" + inter + "\n";
-							counter = 0;
-							continue;
-						}
-					}
-
+					//console.log(obj);
+				
 					var manager = new THREE.LoadingManager();
+					
+					var texture = new THREE.Texture();
+
+					//take care of texture
+					
+					var loader = new THREE.ImageLoader( manager );
+					loader.load( 'musclet.jpg', function ( image ) {
+
+						texture.image = image;
+						texture.needsUpdate = true;
+
+					} );
+					/*
+					if(textureName){
+						loader.load( textureName, function ( image ) {
+
+						texture.image = image;
+						texture.needsUpdate = true;
+
+						} );
+					}
+					else {
+						alert("No associated texture file with this object");
+					}
+					*/					
+
 					var loader = new THREE.OBJLoader( manager );
 					var object = loader.parse(obj);
+					
+					if(textureName) {
+						object.traverse( function ( child ) {
+
+							if ( child instanceof THREE.Mesh ) {
+
+								child.material.map = texture;
+
+							}
+
+						} );
+					}
+					//object.material = new THREE.MeshPhongMaterial;
+					//MeshPhongMaterial.material.map = texture;
+
+
+
 					scene.add(object);
 					var bb = new THREE.Box3();
 					bb.setFromObject(object);
 					bb.center(controls.target);
 					render();
-
-					
 				});
 			
 				//console.log(data);
@@ -231,117 +305,9 @@ function grabObj(){
 				$('.kidney_hollow').text('Failed to find the appropriate xml file.');
 			}
 		}); 
-
-		return obj;
-	}); 
-}
-
-function objLoadTest(){
-	/*
-	LOADING THE OBJS
-	*/
-	var manager = new THREE.LoadingManager();
-	manager.onProgress = function ( item, loaded, total ) {
-
-		console.log( item, loaded, total );
-
-	};
-
-	//texture 
-
-	var texture = new THREE.Texture();
-	var bmap = new THREE.Texture();
-
-	var onProgress = function ( xhr ) {
-		if ( xhr.lengthComputable ) {
-			var percentComplete = xhr.loaded / xhr.total * 100;
-			console.log( Math.round(percentComplete, 2) + '% downloaded' );
-		}
-	};
-
-	var onError = function ( xhr ) {
-	};
-
-	//loading the texture
-	var loader = new THREE.ImageLoader( manager );
-	loader.load( 'HumanHeart-color.jpg', function ( image ) {
-		texture.image = image;
-		texture.needsUpdate = true;
-	} );
-	render();
-	// the bumpmap
-
-
-	var loader = new THREE.ImageLoader( manager );
-	loader.load( 'HumanHeart-bump.jpg', function (image) {
-			bmap.image = image;
-			bmap.needsUpdate = true;
-	} );
-
-	// model
-
-	var loader = new THREE.OBJLoader( manager );
-	loader.load( 'HumanHeart.obj', function ( object ) {
-
-		object.traverse( function ( child ) {
-
-			if ( child instanceof THREE.Mesh ) {
-				//So here I have changed the material of the object to a new material and defined new stuff for it
-				child.material = new THREE.MeshPhongMaterial;
-				child.material.map = texture;
-				child.material.bumpmap = bmap;
-				//child.scale.set( 2, 1, 1 ); //this allows me to scale the size of the object
-			}
-
-		} );
-
-		scene.add( object );
-
-	}, onProgress, onError );
-	render();
-	/*
-	End of OBJ loader
-	*/
-}
-
-function objLoadTest2(){
-
-	var manager = new THREE.LoadingManager();
-	manager.onProgress = function ( item, loaded, total ) {
-
-		console.log( item, loaded, total );
-
-	};
-	var onProgress = function ( xhr ) {
-		if ( xhr.lengthComputable ) {
-			var percentComplete = xhr.loaded / xhr.total * 100;
-			console.log( Math.round(percentComplete, 2) + '% downloaded' );
-		}
-	};
-	var onError = function ( xhr ) {
-	};
-
-	var loader = new THREE.OBJLoader( manager );
-	
-	loader.load( 'Spleen.obj', function ( object ) {
-
-		object.traverse( function ( child ) {
-				if ( child instanceof THREE.Mesh ) {
-				//So here I have changed the material of the object to a new material and defined new stuff for it
-				child.material = new THREE.MeshPhongMaterial;
-				//child.scale.set( 2, 1, 1 ); //this allows me to scale the size of the object
-			}
-		} );
 		
-		//object.applyMatrix( new THREE.Matrix4().makeTranslation( -5,-5,-5 ) );
-		scene.add( object );
-		camera.lookAt(object.position);
-	}, onProgress, onError );
-	render();
-	/*
-	var loader = new THREE.OBJLoader( manager ); 	
-	var object = loader.parse('Spleen.obj');
-	scene.add(object);*/
+	}); 
+
 }
 
 function onWindowResize() {
@@ -354,4 +320,53 @@ function onWindowResize() {
 
 	renderer.setSize( window.innerWidth, window.innerHeight );
 
+}
+
+function demo(){
+		var manager = new THREE.LoadingManager();
+				manager.onProgress = function ( item, loaded, total ) {
+
+					console.log( item, loaded, total );
+
+				};
+
+				var texture = new THREE.Texture();
+
+				var onProgress = function ( xhr ) {
+					if ( xhr.lengthComputable ) {
+						var percentComplete = xhr.loaded / xhr.total * 100;
+						console.log( Math.round(percentComplete, 2) + '% downloaded' );
+					}
+				};
+
+				var onError = function ( xhr ) {
+				};
+
+
+				var loader = new THREE.ImageLoader( manager );
+				loader.load( 'HumanHeart-Color.jpg', function ( image ) {
+
+					texture.image = image;
+					texture.needsUpdate = true;
+
+				} );
+
+				// model
+
+				var loader = new THREE.OBJLoader( manager );
+				loader.load( 'HumanHeart.obj', function ( object ) {
+
+					object.traverse( function ( child ) {
+
+						if ( child instanceof THREE.Mesh ) {
+
+							child.material.map = texture;
+
+						}
+
+					} );
+
+					scene.add( object );
+
+				}, onProgress, onError );
 }
